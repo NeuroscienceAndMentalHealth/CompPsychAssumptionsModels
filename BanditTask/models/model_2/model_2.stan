@@ -1,0 +1,86 @@
+/* RL 4arm-bandit model 2 : 'RL -- \tau + \alpha'
+*  author: Vincent Valton
+*  email: vincent.valton@ucl.ac.uk
+*/
+
+
+data {
+     int<lower=1> N; 				//Number of subjects (strictly positive int)
+     int<lower=1> T;  				//Number of trials (strictly positive int)
+     int<lower=1, upper=T> Tsubj[N]; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
+     int<lower=2> No; 				//Number of choice options in total (int) — set to 4
+     int<lower=2> Nopt;				//Number of choice options per trial (int) — set to 4
+
+     matrix[N,T] rwd;		//Matrix of reals containing the reward received on a given trial (1 or 0) — (rows: participants, columns : trials)
+     matrix[N,T] plt;		//Matrix of reals containing the penalty received on a given trial (-1 or 0) — (rows: participants, columns : trials)
+     vector[No] Vinits;		//Vector or reals containing the initial q-values (set to [0, 0, 0, 0] for now);
+
+     int<lower=1,upper=No> unchosen[No,No-1]; // Preset matrix that maps lists unchosen options from chosen one — set to [2, 3, 4; 1, 3, 4; 1, 2, 4; 1, 2, 3]
+     int<lower=1,upper=No> choice[N,T]; 		 // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 4) — (rows: participants, columns: trials)
+}
+
+transformed data {
+     vector[No] initV;
+     initV = Vinits;
+}
+
+parameters {
+     real<lower=0> a_lr;
+     real<lower=0> b_lr;
+     real<lower=0> k_tau;
+     real<lower=0, upper=20> theta_tau;
+
+     vector<lower=0, upper=1>[N] lr;
+     vector<lower=0, upper=6>[N] tau;
+}
+
+transformed parameters {
+     vector<lower=0>[N] inv_temp;
+
+     inv_temp = 1 ./ tau;
+}
+
+model {
+
+     a_lr ~ normal(1,5);
+     b_lr ~ normal(1,5);
+
+     k_tau ~ normal(0.8,20);
+     theta_tau ~ normal(1,20);
+
+     lr  ~ beta(a_lr,b_lr);
+     tau ~ gamma(k_tau,theta_tau);
+
+
+     for (i in 1:N) {
+             vector[No] v;
+             real pe;
+
+             v = initV;
+
+             for (t in 1:(Tsubj[i])) {
+             		choice[i,t] ~ categorical_logit( inv_temp[i] * v );
+
+                          pe = (rwd[i,t]-fabs(plt[i,t])) - v[choice[i,t]];
+                       		v[choice[i,t]] = v[choice[i,t]] + lr[i] * pe;
+             }
+     }
+}
+generated quantities {
+      real log_lik[N];
+
+        for (i in 1:N) {
+                  vector[No] v;
+                  real pe;
+
+                  v = initV;
+                  log_lik[i] = 0;
+
+                  for (t in 1:(Tsubj[i])) {
+                    log_lik[i] = log_lik[i] + categorical_logit_lpmf( choice[i,t] | inv_temp[i] * v );
+
+                              pe = (rwd[i,t]-fabs(plt[i,t])) - v[choice[i,t]];
+                              v[choice[i,t]] = v[choice[i,t]] + lr[i] * pe;
+                  }
+        }
+}
