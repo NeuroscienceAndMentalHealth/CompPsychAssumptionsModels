@@ -14,6 +14,15 @@ data {
 
 }
 
+parameters {
+  vector[4] mu_p;
+  vector<lower=0>[4] sigma;
+  vector[N] rho_g_nc; //risk aversion in Gains domain
+  vector[N] rho_l_nc; //risk aversion in Loss domain
+  vector[N] lambda_nc;
+  vector[N] tau_nc;
+}
+
 transformed parameters {
   vector<lower=0, upper=2>[N] rho_g;
   vector<lower=0, upper=2>[N] rho_l;
