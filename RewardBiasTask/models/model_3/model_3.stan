@@ -20,7 +20,7 @@ data {
 
 parameters {
      real<lower=0> k_tau;
-     real<lower=0, upper=20> theta_tau;
+     real<lower=0> theta_tau;
      real mu_alpha;
      real<lower=0> sigma_alpha;
      real mu_inits[2,levels];
@@ -28,7 +28,7 @@ parameters {
      real k_instruction_sens;
      real<lower=0> theta_instruction_sens;
 
-     vector<lower=0, upper=6>[N] tau;
+     vector<lower=0>[N] tau;
      vector[N] alpha_raw;
      real inits_raw [N, 2,levels]; //array of initial values - (rows: participants, columns: actions, 3rd dimension: congruence levels)
      vector<lower=0, upper=6>[N] instruction_sens_raw;
@@ -85,7 +85,7 @@ model {
                vector [2] tempv;
                tempv = [v[1,congruence[i,t]],v[2,congruence[i,t]]]';
              	 choice[i,t] ~ categorical_logit(tempv + instruction_sens[i] * accuracy[i,t]);
-		           v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]- alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
+		           v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
              }
              
      }
@@ -103,7 +103,7 @@ generated quantities {
                     vector [2] tempv;
                     tempv = [v[1,congruence[i,t]],v[2,congruence[i,t]]]';
                     log_lik[i] = log_lik[i] + categorical_logit_lpmf( choice[i,t] | (tempv + instruction_sens[i] * accuracy[i,t]));
-                    v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]- alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
+                    v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
                   }
         }
 }

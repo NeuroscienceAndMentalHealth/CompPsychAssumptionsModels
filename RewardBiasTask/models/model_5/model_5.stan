@@ -18,7 +18,7 @@ data {
 
 parameters {
      real<lower=0> k_tau;
-     real<lower=0, upper=20> theta_tau;
+     real<lower=0> theta_tau;
      real mu_alpha;
      real<lower=0> sigma_alpha;
      real mu_inits;
@@ -26,10 +26,10 @@ parameters {
      real k_instruction_sens;
      real<lower=0> theta_instruction_sens;
 
-     vector<lower=0, upper=6>[N] tau;
+     vector<lower=0>[N] tau;
      vector[N] alpha_raw;
      matrix[N,2] inits_raw; //matrix of initial values - (rows: participants, columns: stimuli)
-     vector<lower=0, upper=6>[N] instruction_sens_raw;
+     vector<lower=0>[N] instruction_sens_raw;
 }
 
 transformed parameters {
@@ -75,7 +75,7 @@ model {
 
              for (t in 1:T) {
              		choice[i,t] ~ categorical_logit(v + instruction_sens[i] * accuracy[i,t]);
-		            v[choice[i,t]] = v[choice[i,t]]- alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t]]);
+		            v[choice[i,t]] = v[choice[i,t]]+ alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t]]);
              }
              
      }
@@ -91,7 +91,7 @@ generated quantities {
 
                   for (t in 1:T) {
                     log_lik[i] += categorical_logit_lpmf( choice[i,t] | (v + instruction_sens[i] * accuracy[i,t]));
-                    v[choice[i,t]] = v[choice[i,t]]- alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t]]);
+                    v[choice[i,t]] = v[choice[i,t]]+ alpha[i] * (inv_temp[i] * rwd[i,t]-v[choice[i,t]]);
                   }
         }
 }

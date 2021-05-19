@@ -23,9 +23,9 @@ transformed data {
 
 parameters {
      real<lower=0> k_tau;
-     real<lower=0, upper=20> theta_tau;
+     real<lower=0> theta_tau;
 
-     vector<lower=0, upper=6>[N] tau;
+     vector<lower=0>[N] tau;
 }
 
 transformed parameters {
