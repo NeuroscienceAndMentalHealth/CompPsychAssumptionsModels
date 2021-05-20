@@ -23,21 +23,21 @@ parameters {
      real<lower=0> theta_tau;
      real mu_alpha;
      real<lower=0> sigma_alpha;
-     real mu_inits[2,levels];
-     real<lower=0> sigma_inits[2,levels];
+     real mu_init;
+     real<lower=0> sigma_init;
      real k_instruction_sens;
      real<lower=0> theta_instruction_sens;
 
      vector<lower=0>[N] tau;
      vector[N] alpha_raw;
-     real inits_raw [N, 2,levels]; //array of initial values - (rows: participants, columns: actions, 3rd dimension: congruence levels)
+     real init_raw [N]; // initial value 
      vector<lower=0, upper=6>[N] instruction_sens_raw;
 }
 
 transformed parameters {
      vector<lower=0>[N] inv_temp;
      vector<lower=0,upper=1>[N] alpha;
-     real initV [N, 2, levels];
+     real initV [N];
      vector<lower=0>[N] instruction_sens;
      
 
@@ -45,11 +45,7 @@ transformed parameters {
      instruction_sens = 1 ./ instruction_sens_raw;
      for (i in 1:N) {
        alpha[i] = Phi_approx(mu_alpha + sigma_alpha*alpha_raw[i]); //non-centered parameterisation of learning rate
-       for (a in 1:2){
-         for (b in 1:levels){
-            initV[i,a,b] = mu_inits[a,b] + sigma_inits[a,b]*inits_raw[i,a,b];
-         }
-       }
+       initV[i] = mu_init + sigma_init*init_raw[i];
      }
 }
 
@@ -61,25 +57,20 @@ model {
      
      mu_alpha ~ normal(0,3);
      sigma_alpha ~ cauchy(0,5);
-     for (a in 1:2){
-       for (b in 1:levels){
-         mu_inits[a,b] ~ normal(0,1);
-         sigma_inits[a,b] ~ cauchy(0,5);
-         inits_raw[,a,b] ~ std_normal();
-       }
-     }
-
+     mu_init ~ normal(0,1);
+     sigma_init ~ cauchy(0,5);
 
      tau ~ gamma(k_tau,theta_tau);
      instruction_sens_raw ~ gamma(k_instruction_sens,theta_instruction_sens);
      
      alpha_raw ~ std_normal();
+     init_raw ~ std_normal();
 
 
      for (i in 1:N) {
-             real v [2,levels];
+             matrix [2,levels] v;
 
-             v = initV[i,,];
+             v = [rep_row_vector(initV[i],levels),rep_row_vector(1-initV[i],levels)];
 
              for (t in 1:T) {
                vector [2] tempv;
@@ -94,9 +85,9 @@ generated quantities {
       real log_lik[N];
 
         for (i in 1:N) {
-                  real v[2,levels];
+                  matrix [2,levels] v;
 
-                  v = initV[i,,];
+                  v = [rep_row_vector(initV[i],levels),rep_row_vector(1-initV[i],levels)];
                   log_lik[i] = 0;
 
                   for (t in 1:T) {

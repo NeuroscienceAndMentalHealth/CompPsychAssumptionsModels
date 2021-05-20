@@ -27,11 +27,19 @@ Simple models for the following behavioural tasks:
     │         ├── Model_4  # Robust Logistic model (Parameters: Intercept, Linear Reward, Linear Effort, Lapse)
     │         └── Model_5  # Robust Logistic model (Parameters: Intercept, Linear Reward, Linear Effort, Quadratic Effort, Lapse)
     │    
-    └── GamblingTask      # Gambling task
+    |── GamblingTask      # Gambling task
+    |    └── models       
+    |         ├── Model_1  # NULL model (Parameters: Temperature)
+    |         ├── Model_2  # Risk Aversion model (Parameters: Risk Aversion, Temperature)
+    |         ├── Model_3  # Loss Aversion model (Parameters: Loss Aversion, Temperature)
+    |         ├── Model_4  # Risk & Loss Aversion model (Parameters: Risk Aversion, Loss Aversion, Temperature)
+    |         └── Model_5  # Sep. Risk & Loss Aversion model (Parameters: Risk Aversion gain trials, Risk Aversion loss trials, Loss Aversion, Temperature)
+    |
+    └── RewardBiasTask      # Reward bias task/ Pizzagalli
         └── models       
               ├── Model_1  # NULL model (Parameters: Temperature)
-              ├── Model_2  # Risk Aversion model (Parameters: Risk Aversion, Temperature)
-              ├── Model_3  # Loss Aversion model (Parameters: Loss Aversion, Temperature)
-              ├── Model_4  # Risk & Loss Aversion model (Parameters: Risk Aversion, Loss Aversion, Temperature)
-              └── Model_5  # Sep. Risk & Loss Aversion model (Parameters: Risk Aversion gain trials, Risk Aversion loss trials, Loss Aversion, Temperature)
+              ├── Model_2  # Win-stay lose-shift model (Parameters: Temperature)
+              ├── Model_3  # Stimulus-action model (Parameters: Learning rate, Reward sensitivity, Instruction sensitivity, Initial q-value)
+              ├── Model_4  # Stimulus-action model with separate sensitivities (Parameters: Learning rate, Reward sensitivity, Punishment sensitivity, Instruction sensitivity, Initial q-value)
+              └── Model_5  # Action only model (Parameters: Learning rate, Reward sensitivity, Instruction sensitivity, Initial q-value - same parameters as M3 but diff meanings)
 

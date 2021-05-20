@@ -21,21 +21,21 @@ parameters {
      real<lower=0> theta_tau;
      real mu_alpha;
      real<lower=0> sigma_alpha;
-     real mu_inits;
-     real<lower=0> sigma_inits;
+     real mu_init;
+     real<lower=0> sigma_init;
      real k_instruction_sens;
      real<lower=0> theta_instruction_sens;
 
      vector<lower=0>[N] tau;
      vector[N] alpha_raw;
-     matrix[N,2] inits_raw; //matrix of initial values - (rows: participants, columns: stimuli)
+     real init_raw[N]; //matrix of initial values - (rows: participants, columns: stimuli)
      vector<lower=0>[N] instruction_sens_raw;
 }
 
 transformed parameters {
      vector<lower=0>[N] inv_temp;
      vector<lower=0,upper=1>[N] alpha;
-     matrix[N,2] initV;
+     real initV[N];
      vector<lower=0>[N] instruction_sens;
      
 
@@ -43,7 +43,7 @@ transformed parameters {
      instruction_sens = 1 ./ instruction_sens_raw;
      for (i in 1:N) {
        alpha[i] = Phi_approx(mu_alpha + sigma_alpha*alpha_raw[i]); //non-centered parameterisation of learning rate
-       initV[i] = mu_inits + sigma_inits*inits_raw[i];
+       initV[i] = mu_init + sigma_init*init_raw[i];
      }
 }
 
@@ -55,23 +55,21 @@ model {
      
      mu_alpha ~ normal(0,3);
      sigma_alpha ~ cauchy(0,5);
-     mu_inits ~ normal(0,1);
-     sigma_inits ~ cauchy(0,5);
+     mu_init ~ normal(0,1);
+     sigma_init ~ cauchy(0,5);
 
 
      tau ~ gamma(k_tau,theta_tau);
      instruction_sens_raw ~ gamma(k_instruction_sens,theta_instruction_sens);
      
      alpha_raw ~ std_normal();
-     inits_raw[,1] ~ std_normal(); //need two as a matrix, not vector
-     inits_raw[,2] ~ std_normal();
-     
+     init_raw ~ std_normal(); //need two as a matrix, not vector
      
 
      for (i in 1:N) {
-             vector[2] v;
+             vector [2] v;
 
-             v = initV[i]';
+             v = [initV[i],(1-initV[i])]';
 
              for (t in 1:T) {
              		choice[i,t] ~ categorical_logit(v + instruction_sens[i] * accuracy[i,t]);
@@ -84,9 +82,9 @@ generated quantities {
       real log_lik[N];
 
         for (i in 1:N) {
-                  vector[2] v;
+                  vector [2] v;
 
-                  v = initV[i]';
+                  v = [initV[i],(1-initV[i])]';
                   log_lik[i] = 0;
 
                   for (t in 1:T) {
