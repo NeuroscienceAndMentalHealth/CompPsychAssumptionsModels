@@ -57,7 +57,7 @@ model {
      
      mu_alpha ~ normal(0,3);
      sigma_alpha ~ cauchy(0,5);
-     mu_init ~ normal(0,1);
+     mu_init ~ normal(0,3);
      sigma_init ~ cauchy(0,5);
 
 
