@@ -19,77 +19,81 @@ data {
 }
 
 parameters {
-     real<lower=0> k_tau;
-     real<lower=0, upper=20> theta_tau;
      real mu_alpha;
      real<lower=0> sigma_alpha;
-     real mu_inits[2,levels];
-     real<lower=0> sigma_inits[2,levels];
-     real k_instruction_sens;
-     real<lower=0> theta_instruction_sens;
+     real mu_init;
+     real<lower=0> sigma_init;
+     real<lower=0> k_reward_sensitivity;
+     real<lower=0> theta_reward_sensitivity;
+     real<lower=0> k_punish_sensitivity;
+     real<lower=0> theta_punish_sensitivity;
+     real<lower=0> k_instruction_sensitivity;
+     real<lower=0> theta_instruction_sensitivity;
 
-     matrix<lower=0, upper=6>[N,2] tau;
      vector[N] alpha_raw;
-     real inits_raw [N, 2,levels]; //array of initial values - (rows: participants, columns: actions, 3rd dimension: congruence levels)
-     vector<lower=0, upper=6>[N] instruction_sens_raw;
+     vector[N] init_raw; //array of initial values - (rows: participants, columns: actions, 3rd dimension: congruence levels)
+     vector<lower=0>[N] reward_sensitivity_raw;
+     vector<lower=0>[N] punish_sensitivity_raw;
+     vector<lower=0>[N] instruction_sensitivity_raw;
 }
 
 transformed parameters {
-     matrix<lower=0>[N,2] inv_temp;
      vector<lower=0,upper=1>[N] alpha;
-     real initV [N, 2, levels];
-     vector<lower=0>[N] instruction_sens;
+     vector[N] initV;
+     vector <lower=0>[N] reward_sensitivity;
+     vector <lower=0>[N] punish_sensitivity;
+     vector <lower=0>[N] instruction_sensitivity;
      
 
-     inv_temp = 1 ./ tau;
-     instruction_sens = 1 ./ instruction_sens_raw;
+     reward_sensitivity = 1 ./ reward_sensitivity_raw;
+     punish_sensitivity = 1 ./ punish_sensitivity_raw;
+     instruction_sensitivity = 1 ./ instruction_sensitivity_raw;
      for (i in 1:N) {
        alpha[i] = Phi_approx(mu_alpha + sigma_alpha*alpha_raw[i]); //non-centered parameterisation of learning rate
-       for (a in 1:2){
-         for (b in 1:levels){
-            initV[i,a,b] = mu_inits[a,b] + sigma_inits[a,b]*inits_raw[i,a,b];
-         }
-       }
+       initV[i] = mu_init + sigma_init*init_raw[i];
      }
 }
 
 model {
-     k_tau ~ normal(0.8,20);
-     theta_tau ~ normal(1,20);
-     k_instruction_sens ~ normal(0.8,20);
-     theta_instruction_sens ~ normal(1,20);
-     
+
      mu_alpha ~ normal(0,3);
      sigma_alpha ~ cauchy(0,5);
-     for (a in 1:2){
-       for (b in 1:levels){
-         mu_inits[a,b] ~ normal(0,1);
-         sigma_inits[a,b] ~ cauchy(0,5);
-         inits_raw[,a,b] ~ std_normal();
-       }
-     }
-
-
-     tau[,1] ~ gamma(k_tau,theta_tau);
-     tau[,2] ~ gamma(k_tau,theta_tau);
-     instruction_sens_raw ~ gamma(k_instruction_sens,theta_instruction_sens);
+     mu_init ~ normal(0,3);
+     sigma_init ~ cauchy(0,5);
      
+     k_reward_sensitivity ~ normal(0.8,20);
+     theta_reward_sensitivity ~ normal(1,20);
+     k_punish_sensitivity ~ normal(0.8,20);
+     theta_punish_sensitivity ~ normal(1,20);
+     k_instruction_sensitivity ~ normal(0.8,20);
+     theta_instruction_sensitivity ~ normal(1,20);
+
      alpha_raw ~ std_normal();
+     init_raw ~ std_normal();
+     
+     reward_sensitivity_raw ~ gamma(k_reward_sensitivity,theta_reward_sensitivity);
+     punish_sensitivity_raw ~ gamma(k_punish_sensitivity,theta_punish_sensitivity);
+     instruction_sensitivity_raw ~ gamma(k_instruction_sensitivity,theta_instruction_sensitivity);
+     
 
-     
-     
 
      for (i in 1:N) {
-             real v [2,levels];
+             matrix [2,levels] v;
+             real sens;
 
-             v = initV[i,,];
+             v = [rep_row_vector(initV[i],levels),rep_row_vector(1-initV[i],levels)];
 
              for (t in 1:T) {
                vector [2] tempv;
                tempv = [v[1,congruence[i,t]],v[2,congruence[i,t]]]';
-             	 choice[i,t] ~ categorical_logit(tempv + instruction_sens[i] * accuracy[i,t]);
+             	 choice[i,t] ~ categorical_logit(tempv + instruction_sensitivity[i] * accuracy[i,t]);
              	 //essentially this 2-reward part indexes the 1st inv temp for that participant if they were rewarded, and the second if not
-		           v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]- alpha[i] * (inv_temp[i,(2-rwd[i,t])] * rwd[i,t]-v[choice[i,t],congruence[i,t]]); 
+             	 if (rwd[i,t]==1){
+             	   sens=reward_sensitivity[i];
+             	 } else {
+             	   sens=punish_sensitivity[i];
+             	 }
+		           v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ alpha[i] * (sens * rwd[i,t]-v[choice[i,t],congruence[i,t]]); 
              }
              
      }
@@ -98,16 +102,22 @@ generated quantities {
       real log_lik[N];
 
         for (i in 1:N) {
-                  real v [2,levels];
-
-                  v = initV[i,,];
+                  matrix [2,levels] v;
+                  real sens;
+    
+                  v = [rep_row_vector(initV[i],levels),rep_row_vector(1-initV[i],levels)];
                   log_lik[i] = 0;
 
                   for (t in 1:T) {
                     vector [2] tempv;
                     tempv = [v[1,congruence[i,t]],v[2,congruence[i,t]]]';
-                    log_lik[i] += categorical_logit_lpmf( choice[i,t] | (tempv + instruction_sens[i] * accuracy[i,t]));
-                    v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]- alpha[i] * (inv_temp[i,2-rwd[i,t]] * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
+                    log_lik[i] += categorical_logit_lpmf( choice[i,t] | (tempv + instruction_sensitivity[i] * accuracy[i,t]));
+                    if (rwd[i,t]==1){
+                 	    sens=reward_sensitivity[i];
+                 	  } else {
+                 	    sens=punish_sensitivity[i];
+                 	  }
+                    v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ alpha[i] * (sens * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
                   }
         }
 }
