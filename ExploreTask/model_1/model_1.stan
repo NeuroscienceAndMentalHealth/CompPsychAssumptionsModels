@@ -40,7 +40,7 @@ model {
              vector[2] v = [0.5,0.5]';
 
              for (t in 1:(Tsubj[i])) {
-             		choice[i,t] ~ categorical_logit( inv_temp[i] * v );
+             		choice[i,t] ~ bernoulli_logit( inv_temp[i] * v );
              }
      }
 }
@@ -52,7 +52,7 @@ generated quantities {
                   log_lik[i] = 0;
 
                   for (t in 1:(Tsubj[i])) {
-                    log_lik[i] = log_lik[i] + categorical_logit_lpmf( choice[i,t] | inv_temp[i] * v );
+                    log_lik[i] = log_lik[i] + bernoulli_logit_lpmf( choice[i,t] | inv_temp[i] * v );
                   }
         }
 }
