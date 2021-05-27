@@ -27,14 +27,22 @@ Simple models for the following behavioural tasks:
     │         ├── Model_4  # Robust Logistic model (Parameters: Intercept, Linear Reward, Linear Effort, Lapse)
     │         └── Model_5  # Robust Logistic model (Parameters: Intercept, Linear Reward, Linear Effort, Quadratic Effort, Lapse)
     │    
-    |── GamblingTask      # Gambling task
-    |    └── models       
-    |         ├── Model_1  # NULL model (Parameters: Temperature)
-    |         ├── Model_2  # Risk Aversion model (Parameters: Risk Aversion, Temperature)
-    |         ├── Model_3  # Loss Aversion model (Parameters: Loss Aversion, Temperature)
-    |         ├── Model_4  # Risk & Loss Aversion model (Parameters: Risk Aversion, Loss Aversion, Temperature)
-    |         └── Model_5  # Sep. Risk & Loss Aversion model (Parameters: Risk Aversion gain trials, Risk Aversion loss trials, Loss Aversion, Temperature)
-    |
+    ├── GamblingTask      # Gambling task
+    │    └── models       
+    │         ├── Model_1  # NULL model (Parameters: Temperature)
+    │         ├── Model_2  # Risk Aversion model (Parameters: Risk Aversion, Temperature)
+    │         ├── Model_3  # Loss Aversion model (Parameters: Loss Aversion, Temperature)
+    │         ├── Model_4  # Risk & Loss Aversion model (Parameters: Risk Aversion, Loss Aversion, Temperature)
+    │         └── Model_5  # Sep. Risk & Loss Aversion model (Parameters: Risk Aversion gain trials, Risk Aversion loss trials, Loss Aversion, Temperature)
+    │
+    ├── ExplorationTask      # Gambling task
+    │    └── models       
+    │         ├── Model_1  # NULL model (Parameters: Intercept)
+    │         ├── Model_2  # Value Difference model (Parameters: Theta_V)
+    │         ├── Model_3  # Weighted Value difference model (Parameters: Theta_V/TU)
+    │         ├── Model_4  # Value difference + sigma difference model (Parameters: Theta_V, Theta_RU)
+    │         └── Model_5  # Hybrid model (Parameters: Theta_V, Theta_RU, Theta_V/TU)
+    │
     └── RewardBiasTask      # Reward bias task/ Pizzagalli
         └── models       
               ├── Model_1  # NULL model (Parameters: Temperature)
