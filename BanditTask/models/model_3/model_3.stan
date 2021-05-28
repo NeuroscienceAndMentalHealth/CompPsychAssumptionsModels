@@ -52,7 +52,7 @@ model {
      b_lrR ~ normal(1,5);
 
      a_lrP ~ normal(1.2,5);
-     b_lrP ~ normal(1.2,5);
+     b_lrP ~ normal(1.2,5);
 
      k_tau ~ normal(0.8,20);
      theta_tau ~ normal(1,20);
