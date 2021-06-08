@@ -56,11 +56,11 @@ generated quantities {
       real log_lik[N];
 
         for (i in 1:N) {
-          
+
                   log_lik[i]=0;
 
                   for (t in 1:(Tsubj[i])) {
-                    log_lik[i] = log_lik[i] + bernoulli_lpmf( choice[i,t] | Phi(  (theta_V * V[i,t]) + (theta_RU * RU[i,t]) + (theta_vTU * VTU[i,t])  ) );
+                    log_lik[i] = log_lik[i] + bernoulli_lpmf( choice[i,t] | Phi(  (theta_V[i] * V[i,t]) + (theta_RU[i] * RU[i,t]) + (theta_vTU[i] * VTU[i,t])  ) );
                   }
         }
 }
