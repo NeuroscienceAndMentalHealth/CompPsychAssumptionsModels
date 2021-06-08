@@ -48,7 +48,7 @@ generated quantities {
       real log_lik[N];
 
         for (i in 1:N) {
-                  log_lik[i] = 0;
+                  log_lik[i]=0;
 
                   for (t in 1:(Tsubj[i])) {
                     log_lik[i] = log_lik[i] + bernoulli_lpmf( choice[i,t] | Phi(  (theta_V[i] * V[i,t])) );
