@@ -10,7 +10,7 @@ data {
 
      int<lower=1,upper=2> choice[N,T]; 		 // Array of ints containing the choice made for each trial and participant (i.e. whether they chose left or right) — (rows: participants, columns: trials)
      int<lower=0,upper=1> accuracy[N,T]; //For whether they actually responded correctly (even if unrewarded)
-     int<lower=0,upper=1> rwd[N,T];		//Matrix of integers containing the reward received on a given trial (1 or 0) — (rows: participants, columns : trials)
+     int<lower=-1,upper=1> rwd[N,T];		//Matrix of integers containing the reward received on a given trial (1 or 0) — (rows: participants, columns : trials)
      int<lower=1,upper=levels> congruence[N,T]; //The congruence of the stimuli: should be integers from 1 to levels
 
      matrix[2,levels] Vinits;		//Matrix of reals containing the initial q-values for left and right for each congruence level - set to 0 in this model;

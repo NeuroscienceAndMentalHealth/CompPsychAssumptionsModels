@@ -10,10 +10,31 @@ data {
 
      int<lower=1,upper=2> choice[N,T]; 		 // Array of ints containing the choice made for each trial and participant (i.e. whether they chose left or right) — (rows: participants, columns: trials)
      int<lower=0,upper=1> accuracy[N,T]; //For whether they actually responded correctly (even if unrewarded)
-     int<lower=0,upper=1> rwd[N,T];		//Matrix of integers containing the reward received on a given trial (1 or 0) — (rows: participants, columns : trials)
+     int<lower=-1,upper=1> rwd[N,T];		//Matrix of integers containing the reward received on a given trial (1 or 0) — (rows: participants, columns : trials)
      int<lower=1,upper=levels> congruence[N,T]; //The congruence of the stimuli: should be integers from 1 to levels
 
      matrix[2,levels] Vinits;		//Matrix of reals containing the initial q-values for left and right for each congruence level - not used in this model;
+}
+
+transformed data {
+     vector[2] correct[N,T];
+     for (i in 1:N){
+       for (t in 1:T){
+              if (choice[i,t]==1){
+                      if (accuracy[i,t]==1){
+                         correct[i,t]=[1, 0]';
+                     } else if (accuracy[i,t]==0){
+                         correct[i,t]=[0, 1]';
+                     }
+               } else if (choice[i,t]==2){
+                      if (accuracy[i,t]==1){
+                         correct[i,t]=[0,1]';
+                    } else if (accuracy[i,t]==0){
+                         correct[i,t]=[1,0]';
+                    }
+               }
+       }
+     }
 }
 
 parameters {
@@ -71,7 +92,7 @@ model {
              v = [initV[i],(1-initV[i])]';
 
              for (t in 1:T) {
-             		choice[i,t] ~ categorical_logit(v + instruction_sensitivity[i] * accuracy[i,t]);
+             		choice[i,t] ~ categorical_logit(v + instruction_sensitivity[i] * correct[i,t]);
 		            v[choice[i,t]] = v[choice[i,t]]+ alpha[i] * (reward_sensitivity[i] * rwd[i,t]-v[choice[i,t]]);
              }
              
@@ -87,7 +108,7 @@ generated quantities {
                   log_lik[i] = 0;
 
                   for (t in 1:T) {
-                    log_lik[i] += categorical_logit_lpmf( choice[i,t] | (v + instruction_sensitivity[i] * accuracy[i,t]));
+                    log_lik[i] += categorical_logit_lpmf( choice[i,t] | (v + instruction_sensitivity[i] * correct[i,t]));
                     v[choice[i,t]] = v[choice[i,t]]+ alpha[i] * (reward_sensitivity[i] * rwd[i,t]-v[choice[i,t]]);
                   }
         }
