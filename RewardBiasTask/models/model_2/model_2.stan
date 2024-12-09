@@ -1,4 +1,4 @@
-/* Pizzagalli model 1 : 'WSLS'
+/* Pizzagalli model 2 : 'WSLS'
 *  author: Alex Pike
 *  email: alex.pike@ucl.ac.uk
 */
@@ -51,7 +51,7 @@ model {
                 choice[i,t] ~ categorical_logit( inv_temp[i] * tempv );
 		            v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ (rwd[i,t]-v[choice[i,t],congruence[i,t]]);
              }
-             
+
      }
 }
 generated quantities {

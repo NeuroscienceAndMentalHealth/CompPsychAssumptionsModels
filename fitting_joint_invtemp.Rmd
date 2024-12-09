@@ -1,0 +1,50 @@
+---
+title: "Fit common model"
+output: html_notebook
+---
+
+Libraries
+
+```{r}
+library('tidyverse')
+library('cmdstanr')
+```
+
+Load data
+
+```{r}
+gamble<-read.csv('gamble.csv')
+bandit<-read.csv('bandit.csv')
+```
+
+Format data for stan
+```{r}
+load('gamble_time1_retest_dataList.RData')
+gamble<-dataList_1
+
+load('bandit_time1_retest_dataList.RData')
+bandit<-dataList_1
+
+input<-list(N=gamble$N,
+            gamble_T=gamble$T,
+            gamble_Tsubj=gamble$Tsubj,
+            gamble=gamble$gamble,
+            cert=gamble$cert,
+            gain=gamble$gain,
+            loss=gamble$loss,
+            bandit_T=bandit$T,
+            bandit_Tsubj=bandit$Tsubj,
+            No=bandit$No,
+            Nopt=bandit$Nopt,
+            rwd=bandit$rwd,
+            plt=bandit$plt,
+            Vinits=bandit$Vinits,
+            bandit_choice=bandit$choice)
+```
+
+Now fit
+
+```{r}
+cmdstan_model('common_invtemp.stan')
+```
+
