@@ -13,17 +13,32 @@ library('cmdstanr')
 Load data
 
 ```{r}
-gamble<-read.csv('gamble.csv')
-bandit<-read.csv('bandit.csv')
+datadir<-'/Users/ap2344/Google Drive/My Drive/Papers/Assumptions paper/cluster_in/'
+
+load(paste0(datadir,'gamblemodeldata.RData'))
+gamble<-GambledataList
+
+load(paste0(datadir,'bandit_rewardBias/bandit_datalist.RData'))
+bandit<-bandit_datalist
+
+#will need to revise this to use proper ids
 ```
 
 Format data for stan
 ```{r}
-load('gamble_time1_retest_dataList.RData')
-gamble<-dataList_1
+ids_gamble<-rownames(GambledataList$cert)
+ids_bandit<-rownames(bandit_datalist$rwd)
 
-load('bandit_time1_retest_dataList.RData')
-bandit<-dataList_1
+
+#hacky way of getting same participants
+vector_intersection<-ifelse(ids_gamble %in% ids_bandit,1,0)
+
+gamble$N<-sum(vector_intersection)
+gamble$Tsubj<-gamble$Tsubj[vector_intersection]
+gamble$gamble<-gamble$gamble[vector_intersection,]
+gamble$cert<-gamble$cert[vector_intersection,]
+gamble$gain<-gamble$gain[vector_intersection,]
+gamble$loss<-gamble$loss[vector_intersection,]
 
 input<-list(N=gamble$N,
             gamble_T=gamble$T,
@@ -39,12 +54,40 @@ input<-list(N=gamble$N,
             rwd=bandit$rwd,
             plt=bandit$plt,
             Vinits=bandit$Vinits,
+            unchosen=bandit$unchosen,
             bandit_choice=bandit$choice)
 ```
 
 Now fit
 
 ```{r}
-cmdstan_model('common_invtemp.stan')
+model<-cmdstan_model('common_invtemp.stan')
+```
+Run model
+
+```{r}
+sampling=1
+
+if (sampling==1){
+  fit<- model$sample(data=input,parallel_chains=4)
+} else {
+  fit<- model$variational(data=input)
+}
+fit$save_object('jointfit.RDS')
+```
+
+Analyse fit results
+
+```{r}
+invtemp<-fit$summary(c('invtemp_i'))
+correlation_matrix<-fit$summary('R_invtemp')['mean']$mean
+
+correlation<-data.frame(task1=c('bandit','bandit','gamble','gamble'),task2=c('gamble','bandit','gamble','bandit'),corr=correlation_matrix)
+
+ggplot(correlation,aes(x=task1,y=task2,fill=corr))+
+  geom_tile()+
+  scale_fill_gradient2(low='blue',mid='white',high='red')
+
+correlation_matrix
 ```
 
