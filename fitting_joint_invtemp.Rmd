@@ -82,12 +82,50 @@ Analyse fit results
 invtemp<-fit$summary(c('invtemp_i'))
 correlation_matrix<-fit$summary('R_invtemp')['mean']$mean
 
-correlation<-data.frame(task1=c('bandit','bandit','gamble','gamble'),task2=c('gamble','bandit','gamble','bandit'),corr=correlation_matrix)
+correlation<-data.frame(task1=c('bandit','bandit','gamble','gamble'),task2=c('bandit','gamble','bandit','gamble'),corr=correlation_matrix)
 
 ggplot(correlation,aes(x=task1,y=task2,fill=corr))+
   geom_tile()+
   scale_fill_gradient2(low='blue',mid='white',high='red')
 
 correlation_matrix
+
+parameters<-c('invtemp')
+parameters_pr<-paste0(parameters,'_pr')
+
+#into=c('parameter','id','time')
+into=c('parameter','task','id')
+
+pars_testretest<-(colMeans(fit$draws(parameters_pr)))%>%
+  data.frame()%>%
+  rownames_to_column(var='parameter')%>%
+  separate(col=parameter,into=into)%>%
+  rename(value='.')%>%
+  pivot_wider(names_from=c(task),values_from='value')
+
+correlations<-pars_testretest%>%
+  group_by(parameter)%>%
+  summarise(correlation=cor.test(`1`,`2`)$estimate)
+
+correlations
+
+ggplot(pars_testretest,aes(x=`1`,y=`2`))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  facet_wrap(facets='parameter',scales='free')
+
+into=c(NA,'parameter','time','id')
+corr_gng<-fit$summary(paste0('R_','mu'),'mean', ~quantile(.x, probs = c(0.05, 0.95)))%>%
+  data.frame()%>%
+  separate(col=variable,into=into)%>%
+  filter(time!=id&time==1)
+
+ggplot(corr_gng,aes(x=parameter,y=mean))+
+  geom_errorbar(aes(ymin=X5.,ymax=X95.),position=position_dodge(0.5))+
+  geom_point(position=position_dodge(0.5))+
+  theme_minimal()+
+  labs(x='Measure',y='Estimate and 95% confidence interval',colour='Analysis')+
+  scale_x_discrete(labels=c('Mean'))+
+  geom_hline(yintercept=0,linetype='dotted')
 ```
 

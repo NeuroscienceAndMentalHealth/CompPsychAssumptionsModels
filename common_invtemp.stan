@@ -105,7 +105,7 @@ model {
   
   // Inv temp priors
   invtemp_mean ~ normal (0, 1); //CHECK
-  invtemp_sd ~ normal (0,1); 
+  invtemp_sd ~ normal (0,0.2); 
   to_vector(invtemp_pr) ~ normal(0,1); 
   
   // Gamble pars
