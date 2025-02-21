@@ -7,14 +7,14 @@
 data {
      int<lower=1> N; 				            //Number of subjects (strictly positive int)
      int<lower=1> T;  				          //Number of trials (strictly positive int)
-     int<lower=1, upper=T> Tsubj[N]; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
+     array [N] int<lower=1, upper=T> Tsubj; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
 
      // V, RU and VTU need to be transformed: mutate_at(vars(starts_with('kalman')), scale) %>% # z transform
      matrix[N,T] V;		  //Matrix of z-transformed reals containing the Kalman Value Difference (i.e. V) on that trial — (rows: participants, columns : trials)
      matrix[N,T] RU;		//Matrix of z-transformed reals containing the Kalman Sigma Difference (i.e. RU) on that trial — (rows: participants, columns : trials)
      matrix[N,T] VTU;		//Matrix of z-transformed reals containing the Kalman Value Difference (i.e. V/TU) on that trial — (rows: participants, columns : trials)
 
-     int choice[N,T];   // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 2 : 0 or 1) — (rows: participants, columns: trials)
+     array[N,T] int choice;   // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 2 : 0 or 1) — (rows: participants, columns: trials)
 }
 
 parameters {
@@ -53,7 +53,7 @@ model {
      }
 }
 generated quantities {
-      real log_lik[N];
+      array [N] real log_lik;
 
         for (i in 1:N) {
 
