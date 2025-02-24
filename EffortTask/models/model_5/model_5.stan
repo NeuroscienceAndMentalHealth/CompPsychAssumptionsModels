@@ -6,7 +6,7 @@ data{
     int<lower=1> Ns; // number of subjects (strictly positive int)
     int<lower=0> Nx; // maximum number of trials (int)
     int<lower=1> Ni; // number of predictors (ignore for now and set to 1)
-    int<lower=0,upper=1> y[Ns,Nx]; // Responses (accept/refuse = 1 or 0) — 2D array of ints (rows: participant, columns: trials)
+    array [Ns,Nx] int<lower=0,upper=1> y; // Responses (accept/refuse = 1 or 0) — 2D array of ints (rows: participant, columns: trials)
 
     matrix<lower=0>[Ns,Nx] x_rwd; // Matrix of reals containing the reward level for each participant and trial — (rows: participant, column: trial)
     matrix<lower=0>[Ns,Nx] x_eff;   // Matrix of reals containing the effort level for each participant and trial — (rows: participant, column: trial)
@@ -77,7 +77,7 @@ model{
   }
 }
 generated quantities{
-  real log_lik[Ns];
+  array [Ns] real log_lik;
 
   for (i_subj in 1:Ns){
     log_lik[i_subj]=0;
