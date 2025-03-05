@@ -7,7 +7,7 @@
 data {
      int<lower=1> N; 				//Number of subjects (strictly positive int)
      int<lower=1> T;  				//Number of trials (strictly positive int)
-     int<lower=1, upper=T> Tsubj[N]; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
+     array[N] int<lower=1, upper=T>Tsubj; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
      int<lower=2> No; 				//Number of choice options in total (int) — set to 4
      int<lower=2> Nopt;				//Number of choice options per trial (int) — set to 4
 
@@ -15,8 +15,8 @@ data {
      matrix[N,T] plt;		//Matrix of reals containing the penalty received on a given trial (-1 or 0) — (rows: participants, columns : trials)
      vector[No] Vinits;		//Vector or reals containing the initial q-values (set to [0, 0, 0, 0] for now);
 
-     int<lower=1,upper=No> unchosen[No,No-1]; // Preset matrix that maps lists unchosen options from chosen one — set to [2, 3, 4; 1, 3, 4; 1, 2, 4; 1, 2, 3]
-     int<lower=1,upper=No> choice[N,T]; 		 // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 4) — (rows: participants, columns: trials)
+     array[No,No-1] int <lower=1,upper=No> unchosen; // Preset matrix that maps lists unchosen options from chosen one — set to [2, 3, 4; 1, 3, 4; 1, 2, 4; 1, 2, 3]
+     array[N,T] int <lower=1,upper=No> choice; 		 // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 4) — (rows: participants, columns: trials)
 }
 
 transformed data {
@@ -61,13 +61,13 @@ model {
              for (t in 1:(Tsubj[i])) {
              		choice[i,t] ~ categorical_logit( inv_temp[i] * v );
 
-                          pe = (rwd[i,t]-fabs(plt[i,t])) - v[choice[i,t]];
+                          pe = (rwd[i,t]-abs(plt[i,t])) - v[choice[i,t]];
                        		v[choice[i,t]] = v[choice[i,t]] + lr[i] * pe;
              }
      }
 }
 generated quantities {
-      real log_lik[N];
+      vector [N] log_lik;
 
         for (i in 1:N) {
                   vector[No] v;
@@ -79,7 +79,7 @@ generated quantities {
                   for (t in 1:(Tsubj[i])) {
                     log_lik[i] = log_lik[i] + categorical_logit_lpmf( choice[i,t] | inv_temp[i] * v );
 
-                              pe = (rwd[i,t]-fabs(plt[i,t])) - v[choice[i,t]];
+                              pe = (rwd[i,t]-abs(plt[i,t])) - v[choice[i,t]];
                               v[choice[i,t]] = v[choice[i,t]] + lr[i] * pe;
                   }
         }

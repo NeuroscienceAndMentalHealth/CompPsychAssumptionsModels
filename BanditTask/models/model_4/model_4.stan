@@ -3,7 +3,7 @@
 data {
      int<lower=1> N; 				//Number of subjects (strictly positive int)
      int<lower=1> T;  				//Number of trials (strictly positive int)
-     int<lower=1, upper=T> Tsubj[N]; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
+     array[N] int<lower=1, upper=T>Tsubj; 		//Number of trials per subject (1D array of ints) — contains the max number of trials per subject
      int<lower=2> No; 				//Number of choice options in total (int) — set to 4
      int<lower=2> Nopt;				//Number of choice options per trial (int) — set to 4
 
@@ -11,8 +11,8 @@ data {
      matrix[N,T] plt;		//Matrix of reals containing the penalty received on a given trial (-1 or 0) — (rows: participants, columns : trials)
      vector[No] Vinits;		//Vector or reals containing the initial q-values (set to [0, 0, 0, 0] for now);
 
-     int<lower=1,upper=No> unchosen[No,No-1]; // Preset matrix that maps lists unchosen options from chosen one — set to [2, 3, 4; 1, 3, 4; 1, 2, 4; 1, 2, 3]
-     int<lower=1,upper=No> choice[N,T]; 		 // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 4) — (rows: participants, columns: trials)
+     array[No,No-1] int <lower=1,upper=No> unchosen; // Preset matrix that maps lists unchosen options from chosen one — set to [2, 3, 4; 1, 3, 4; 1, 2, 4; 1, 2, 3]
+     array[N,T] int <lower=1,upper=No> choice; 		 // Array of ints containing the choice made for each trial and participant (i.e. option chosen out of 4) — (rows: participants, columns: trials)
 }
 
 transformed data {
@@ -116,10 +116,10 @@ generated quantities {
   real<lower=0, upper=1> mu_xi;
 
   // For log likelihood calculation
-  real log_lik[N];
+  vector [N] log_lik;
 
   // For posterior predictive check
-  real y_pred[N, T];
+  array [N,T] real y_pred;
 
   // Set all posterior predictions to 0 (avoids NULL values)
   for (i in 1:N) {

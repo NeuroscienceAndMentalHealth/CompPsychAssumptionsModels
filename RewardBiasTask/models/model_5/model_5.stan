@@ -99,7 +99,7 @@ model {
      }
 }
 generated quantities {
-      array[N] real log_lik;
+      vector [N] log_lik;
 
         for (i in 1:N) {
                   vector [2] v;

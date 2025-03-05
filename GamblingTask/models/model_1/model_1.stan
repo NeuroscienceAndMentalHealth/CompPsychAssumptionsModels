@@ -7,11 +7,11 @@
 data {
   int<lower=1> N;// Number of subjects (strictly positive int)
   int<lower=1> T; // Max number of trials (strictly positive int)
-  int<lower=1, upper=T> Tsubj[N]; // Max number of trials per participants (1D array of ints)
-  int<lower=-1, upper=1> gamble[N, T]; // 2D array of ints containing whether participant gambled or not (1, 0 respectively) on a given trial — (Row: participant, column: Trial)
-  real cert[N, T]; // 2D Array of reals containing value for the sure option for each participant and trial — (Row: participant, columns: trials)
-  real<lower=0> gain[N, T]; // 2D Array of reals containing value for the gain in the gamble for each participant and trial — (Row: participant, columns: trials)
-  real<lower=0> loss[N, T]; // 2D Array of reals containing value for the loss in the gamble for each participant and trial — (Row: participant, columns: trials)
+  array [N] int <lower=1, upper=T> Tsubj; // Max number of trials per participants (1D array of ints)
+  array [N, T] int<lower=-1, upper=1> gamble; // 2D array of ints containing whether participant gambled or not (1, 0 respectively) on a given trial — (Row: participant, column: Trial)
+  array [N, T] int cert; // 2D Array of reals containing value for the sure option for each participant and trial — (Row: participant, columns: trials)
+  array [N, T] real<lower=0> gain; // 2D Array of reals containing value for the gain in the gamble for each participant and trial — (Row: participant, columns: trials)
+  array [N, T] real<lower=0> loss; // 2D Array of reals containing value for the loss in the gamble for each participant and trial — (Row: participant, columns: trials)
 
 }
 
@@ -48,8 +48,8 @@ model {
 }
 
 generated quantities {
-  real log_lik[N];
-  real y_pred[N, T];
+  vector [N] log_lik;
+  array [N, T] real y_pred;
 
   for (i in 1:N) {
     for (t in 1:T) {
