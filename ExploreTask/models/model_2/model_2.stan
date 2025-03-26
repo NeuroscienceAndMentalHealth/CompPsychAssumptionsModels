@@ -48,7 +48,6 @@ generated quantities {
       array [N] real log_lik;
 
         for (i in 1:N) {
-
                   log_lik[i]=0;
 
                   for (t in 1:(Tsubj[i])) {
