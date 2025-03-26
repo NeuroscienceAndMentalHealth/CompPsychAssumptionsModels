@@ -22,23 +22,22 @@ transformed data {
 }
 
 parameters {
-     real<lower=0> k_tau;
-     real<lower=0> theta_tau;
+     real mu;
+     real<lower=0> sigma;
 
-     vector<lower=0>[N] tau;
+     vector[N] inv_temp_raw;
 }
 
 transformed parameters {
      vector<lower=0>[N] inv_temp;
 
-     inv_temp = 1 ./ tau;
+     inv_temp = Phi_approx(mu + sigma*inv_temp_raw)*5;
 }
 
 model {
-     k_tau ~ normal(0.8,20);
-     theta_tau ~ normal(1,20);
-
-     tau ~ gamma(k_tau,theta_tau);
+     mu ~ std_normal();
+     sigma ~ cauchy(0,2.5);
+     inv_temp_raw ~ std_normal();
 
      for (i in 1:N) {
              matrix [2,levels] v;

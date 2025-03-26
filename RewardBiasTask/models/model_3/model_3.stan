@@ -40,19 +40,13 @@ transformed data {
 }
 
 parameters {
-     real mu_alpha;
-     real<lower=0> sigma_alpha;
-     real mu_init;
-     real<lower=0> sigma_init;
-     real<lower=0> k_reward_sensitivity;
-     real<lower=0> theta_reward_sensitivity;
-     real<lower=0> k_instruction_sensitivity;
-     real<lower=0> theta_instruction_sensitivity;
+     vector[4] mu;
+     vector<lower=0>[4] sigma;
 
      vector[N] alpha_raw;
      vector[N] init_raw; //array of initial values - (rows: participants, columns: actions, 3rd dimension: congruence levels)
-     vector<lower=0>[N] reward_sensitivity_raw;
-     vector<lower=0>[N] instruction_sensitivity_raw;
+     vector[N] reward_sensitivity_raw;
+     vector[N] instruction_sensitivity_raw;
 }
 
 transformed parameters {
@@ -62,30 +56,22 @@ transformed parameters {
      vector<lower=0>[N] instruction_sensitivity;
      
 
-     reward_sensitivity = 1 ./ reward_sensitivity_raw;
-     instruction_sensitivity = 1 ./ instruction_sensitivity_raw;
      for (i in 1:N) {
-       alpha[i] = Phi_approx(mu_alpha + sigma_alpha*alpha_raw[i]); //non-centered parameterisation of learning rate
-       initV[i] = mu_init + sigma_init*init_raw[i];
+       alpha[i] = Phi_approx(mu[1] + sigma[1]*alpha_raw[i]); //non-centered parameterisation of learning rate
+       initV[i] = mu[2] + sigma[2]*init_raw[i];
+       reward_sensitivity[i] = Phi_approx(mu[3] + sigma[3] *reward_sensitivity_raw[i])*5;
+       instruction_sensitivity[i] = Phi_approx(mu[4] + sigma[4] *instruction_sensitivity_raw[i])*5;
      }
 }
 
 model {
-     mu_alpha ~ normal(0,3);
-     sigma_alpha ~ cauchy(0,5);
-     mu_init ~ normal(0,3);
-     sigma_init ~ cauchy(0,5);
-     
-     k_reward_sensitivity ~ normal(0.8,20);
-     theta_reward_sensitivity ~ normal(1,20);
-     k_instruction_sensitivity ~ normal(0.8,20);
-     theta_instruction_sensitivity ~ normal(1,20);
+     mu ~ normal(0,1);
+     sigma ~ cauchy(0,2.5);
 
      alpha_raw ~ std_normal();
      init_raw ~ std_normal();
-     
-     reward_sensitivity_raw ~ gamma(k_reward_sensitivity,theta_reward_sensitivity);
-     instruction_sensitivity_raw ~ gamma(k_instruction_sensitivity,theta_instruction_sensitivity);
+     reward_sensitivity_raw ~ std_normal();
+     instruction_sensitivity_raw ~ std_normal();
 
 
      for (i in 1:N) {

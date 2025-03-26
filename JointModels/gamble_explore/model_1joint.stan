@@ -1,4 +1,4 @@
-/* Common model with embedded correlations based on separate winning models: gambling task and bandit task'
+/* Common model with embedded correlations based on separate winning models: gambling task and explore task'
 *  author: Alex Pike
 *  email: alex.pike@york.ac.uk
 */
@@ -35,8 +35,10 @@ parameters {
       cholesky_factor_corr[2] L_R_invtemp; 
   
      // Gambling
-      real mu_p;
-      real<lower=0> sigma;
+      vector[3] mu_p;
+      vector<lower=0>[3] sigma;
+      vector[N] rho_g_nc;
+      vector[N] rho_l_nc;
       vector[N] lambda_nc;
 
      // Explore
@@ -54,6 +56,8 @@ parameters {
 
 transformed parameters {
   //declare 
+  vector<lower=0,upper=2>[N] rho_g;
+  vector<lower=0,upper=2>[N] rho_l;
   vector<lower=0, upper=5>[N] lambda;
   vector[N] theta_RU;
   
@@ -72,8 +76,12 @@ transformed parameters {
     invtemp_i[i,1] = exp(invtemp_mean[1] + invtemp_i_tilde[1,i]); //as you can see, here we just add the group mean and group sd for time 1 to the z-scored individual difference bit for that participant, exp transform to make positive
     // Mean in task 2
     invtemp_i[i,2] = exp(invtemp_mean[2] + invtemp_i_tilde[2,i]);
+    // Gamble rho_g
+    rho_g[i] = Phi_approx(mu_p[1] + sigma[1] * rho_g_nc[i]) * 2;
+    // Gamble rho_l
+    rho_l[i] = Phi_approx(mu_p[2] + sigma[2] * rho_l_nc[i]) * 2;
     // Gamble lambda
-    lambda[i] = Phi_approx(mu_p + sigma * lambda_nc[i]) * 5;
+    lambda[i] = Phi_approx(mu_p[3] + sigma[3] * lambda_nc[i]) * 5;
   }
   
     // Explore theta_RU (doesn't need to be in loop)
@@ -91,8 +99,10 @@ model {
   
   // Gamble pars
   mu_p  ~ normal(0, 1.0);
-  sigma ~ normal(0, 0.2);
+  sigma ~ normal (0, 0.2);
 
+  rho_g_nc ~ normal(0, 1.0);
+  rho_l_nc ~ normal(0, 1.0);
   lambda_nc ~ normal(0, 1.0);
 
   // Explore pars
@@ -110,16 +120,16 @@ model {
       real pGamble;
 
       if (cert[i,t] < 0){ // If loss trials only (sure option is negative)
-        evSafe   = - (lambda[i] * pow(abs(cert[i, t]), 1.0)); // applies risk and loss aversion to negative sure option and negate
-        evGamble = - 0.5 * lambda[i] * pow(abs(loss[i, t]), 1.0); //Gain is always Zero
+        evSafe   = - (lambda[i] * pow(abs(cert[i, t]), rho_l[i])); // applies risk and loss aversion to negative sure option and negate
+        evGamble = - 0.5 * lambda[i] * pow(abs(loss[i, t]), rho_l[i]); //Gain is always Zero
       }
       if (cert[i,t] == 0){ // mixed gamble trials (sure option is exactly 0)
-        evSafe   = pow(cert[i, t], 1.0); // could replace by 0;
-        evGamble = 0.5 * (pow(gain[i, t], 1.0) - lambda[i] * pow(abs(loss[i, t]), 1.0));
+        evSafe   = pow(cert[i, t], rho_g[i]); // could replace by 0;
+        evGamble = 0.5 * (pow(gain[i, t], rho_g[i]) - lambda[i] * pow(abs(loss[i, t]), rho_l[i]));
       }
       if (cert[i,t] > 0) { // Gain only trials (sure option is positive)
-        evSafe   = pow(cert[i, t], 1.0);
-        evGamble = 0.5 * pow(gain[i, t], 1.0); //Loss is always 0
+        evSafe   = pow(cert[i, t], rho_g[i]);
+        evGamble = 0.5 * pow(gain[i, t], rho_g[i]); //Loss is always 0
       }
       pGamble  = inv_logit(invtemp_i[i,1] * (evGamble - evSafe));
       gamble[i, t] ~ bernoulli(pGamble);

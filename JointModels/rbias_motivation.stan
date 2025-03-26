@@ -1,7 +1,8 @@
-/* Pizzagalli model 5 : 'action only'
+/* Pizzagalli model 3 : 'Stimulus action'
 *  author: Alex Pike
 *  email: alex.pike@ucl.ac.uk
 */
+
 
 data {
      int<lower=1> N; 				//Number of subjects (strictly positive int)
@@ -14,6 +15,9 @@ data {
      array[N,T] int<lower=1,upper=levels> congruence; //The congruence of the stimuli: should be integers from 1 to levels
 
      matrix[2,levels] Vinits;		//Matrix of reals containing the initial q-values for left and right for each congruence level - not used in this model;
+     
+     vector[N] motivation; 
+
 }
 
 transformed data {
@@ -38,13 +42,15 @@ transformed data {
 }
 
 parameters {
-     vector[5] mu;
-     vector<lower=0>[5] sigma;
+     vector [4] mu;
+     vector <lower=0> [4] sigma;
 
      vector[N] alpha_raw;
      vector[N] init_raw; //array of initial values - (rows: participants, columns: actions, 3rd dimension: congruence levels)
      vector[N] reward_sensitivity_raw;
      vector[N] instruction_sensitivity_raw;
+     
+     real effsize;
 }
 
 transformed parameters {
@@ -53,34 +59,35 @@ transformed parameters {
      vector[N] initV;
      vector<lower=0>[N] instruction_sensitivity;
      
-
      for (i in 1:N) {
        alpha[i] = Phi_approx(mu[1] + sigma[1]*alpha_raw[i]); //non-centered parameterisation of learning rate
        initV[i] = mu[2] + sigma[2]*init_raw[i];
-       reward_sensitivity[i] = Phi_approx(mu[3] + sigma[3]*reward_sensitivity_raw[i])*5;
-       instruction_sensitivity[i] = Phi_approx(mu[4] + sigma[4]*instruction_sensitivity_raw[i])*5;
+       reward_sensitivity[i] = Phi_approx(mu[3] + effsize*motivation[i] + sigma[3] *reward_sensitivity_raw[i])*5;
+       instruction_sensitivity[i] = Phi_approx(mu[4] + sigma[4] *instruction_sensitivity_raw[i])*5;
      }
 }
 
 model {
      mu ~ normal(0,1);
      sigma ~ cauchy(0,2.5);
-    
-
+     
+     effsize ~ normal(0,1); 
      alpha_raw ~ std_normal();
      init_raw ~ std_normal();
      reward_sensitivity_raw ~ std_normal();
      instruction_sensitivity_raw ~ std_normal();
-     
+
 
      for (i in 1:N) {
-             vector [2] v;
+             matrix [2,levels] v;
 
-             v = [initV[i],(1-initV[i])]';
+             v = [rep_row_vector(initV[i],levels),rep_row_vector(1-initV[i],levels)];
 
              for (t in 1:T) {
-             		choice[i,t] ~ categorical_logit(v + instruction_sensitivity[i] * correct[i,t]);
-		            v[choice[i,t]] = v[choice[i,t]]+ alpha[i] * (reward_sensitivity[i] * rwd[i,t]-v[choice[i,t]]);
+               vector [2] tempv;
+               tempv = [v[1,congruence[i,t]],v[2,congruence[i,t]]]';
+             	 choice[i,t] ~ categorical_logit(tempv + instruction_sensitivity[i] * correct[i,t]);
+		           v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ alpha[i] * (reward_sensitivity[i]* rwd[i,t]-v[choice[i,t],congruence[i,t]]);
              }
              
      }
@@ -89,14 +96,16 @@ generated quantities {
       vector [N] log_lik;
 
         for (i in 1:N) {
-                  vector [2] v;
+                  matrix [2,levels] v;
 
-                  v = [initV[i],(1-initV[i])]';
+                  v = [rep_row_vector(initV[i],levels),rep_row_vector(1-initV[i],levels)];
                   log_lik[i] = 0;
 
                   for (t in 1:T) {
-                    log_lik[i] += categorical_logit_lpmf( choice[i,t] | (v + instruction_sensitivity[i] * correct[i,t]));
-                    v[choice[i,t]] = v[choice[i,t]]+ alpha[i] * (reward_sensitivity[i] * rwd[i,t]-v[choice[i,t]]);
+                    vector [2] tempv;
+                    tempv = [v[1,congruence[i,t]],v[2,congruence[i,t]]]';
+                    log_lik[i] = log_lik[i] + categorical_logit_lpmf( choice[i,t] | (tempv + instruction_sensitivity[i] * correct[i,t]));
+                    v[choice[i,t],congruence[i,t]] = v[choice[i,t],congruence[i,t]]+ alpha[i] * (reward_sensitivity[i] * rwd[i,t]-v[choice[i,t],congruence[i,t]]);
                   }
         }
 }
