@@ -137,7 +137,7 @@ model {
     
     // Explore
        for (t in 1:(explore_Tsubj[i])) {
-       		explore_choice[i,t] ~ bernoulli(Phi(  (invtemp_i[i,2] * V[i,t]) + (theta_RU[i] * RU[i,t]) ));
+       		explore_choice[i,t] ~ bernoulli(Phi(  (-1*invtemp_i[i,2] * V[i,t]) + (theta_RU[i] * RU[i,t]) ));
        }
   }
 }
